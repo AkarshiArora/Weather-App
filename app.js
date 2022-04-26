@@ -1,76 +1,63 @@
-// api.openweathermap.org/data/2.5/weather?q={city name}&appid={API key}
-const weatherApi = {
-  key: "3722d3ade707695cb339a8a821150794",
-  baseUrl: "https://api.openweathermap.org/data/2.5/weather"
-}
+let weather = {
+    apiKey :'763ee6440fc3ebae8012f486cef21891',
 
-const searchInputBox = document.getElementById('input-box');
+    fetchWeather : function(city){
+        fetch(
+            `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${this.apiKey}`        )
+        .then((response) => response.json())
+        .then((data) => this.displayWeather(data))
+        .catch((err) => alert('Location not found :)'));
+    },
 
-// Event Listner Function for enter key(keycode=13) press
+    displayWeather : function(data){
+        const {name}= data;
+        const {temp,humidity} = data.main;
+        const {icon, description} = data.weather[0];
+        const {speed} = data.wind;
+        console.log(name , temp , humidity , icon , description , speed);
+        
+        document.querySelector('h2').innerHTML='Weather in ' + name; 
+        document.querySelector('.temperature-degree').innerHTML= Math.floor(temp);
+        document.querySelector('.icon').src='http://openweathermap.org/img/wn/'+ icon +'@2x.png';
+        document.querySelector('.temperature-description').innerHTML=description;
+        document.querySelector('.humidity').innerHTML='Humidity : '+ humidity+' %';
+        document.querySelector('.wind').innerHTML='Wind Speed : '+speed+' km/hr';
+    },
 
-searchInputBox.addEventListener('keypress',(event)=>{
-  if(event.keyCode==13){
-    console.log(searchInputBox.value);
-    getWeatherReport(searchInputBox.value);
-    document.querySelector('.weather-body').style.display = "block";
-  }
+    search : function(){
+        this.fetchWeather(document.querySelector('#city').value);
+    },
+};
+
+document.querySelector('.search ').addEventListener('click', function () {
+    weather.search();
+    document.querySelector('#city').value = '';
+})
+
+// for enter key
+document.querySelector('#city').addEventListener('keyup', function (e) {
+    if(e.key == 'Enter'){
+        weather.search();
+        document.querySelector('#city').value = '';
+    }
+})
+
+//onloading displays current location weather
+window.addEventListener('load', () => {
+    let long;
+    let lat;
+    let api;
+    if(navigator.geolocation){
+        navigator.geolocation.getCurrentPosition(position => {
+            long = position.coords.longitude;
+            lat = position.coords.latitude;
+            // console.log(lat, long);
+            api ='763ee6440fc3ebae8012f486cef21891';
+    fetch(
+        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${long}&units=metric&appid=${api}`
+    )
+    .then((response) => response.json())
+    .then((data) => weather.displayWeather(data));
+        });   
+    }
 });
-
-// Get Weather Report
-
-function getWeatherReport(city){
-  fetch(`${weatherApi.baseUrl}?q=${city}&appid=${weatherApi.key}&units=metric`)
-  .then(weather=>{
-    return weather.json();
-  }).then(showWeatherReport);
-}
-
-// Show weather Report
-
-function showWeatherReport(weather){
-  console.log(weather);
-  let city = document.getElementById('city');
-  city.innerText = `${weather.name}, ${weather.sys.country}`;
-
-  let temperature = document.getElementById('temp');
-  temperature.innerHTML = `${Math.round(weather.main.temp)}&deg;C`;
-
-  let minMaxTemp = document.getElementById('min-max');
-  minMaxTemp.innerHTML = `${Math.floor(weather.main.temp_min)}&deg;C (min) / ${Math.ceil(weather.main.temp_max)}&deg;C (max)`;
-
-  let weatherType = document.getElementById('weather');
-  weatherType.innerText = `${weather.weather[0].main}`;
-
-  let date = document.getElementById('date');
-  let todayDate = new Date();
-  date.innerText = dateManage(todayDate);
-
-  if(weatherType.textContent == 'Clear'){
-    document.body.style.backgroundImage = "url('images/clear.jpg')";
-  }else if(weatherType.textContent == 'Clouds'){
-    document.body.style.backgroundImage = "url('images/clouds.jpg')";
-  }else if(weatherType.textContent == 'Haze'){
-    document.body.style.backgroundImage = "url('images/haze.jpg')";
-  }else if(weatherType.textContent == 'Rain'){
-    document.body.style.backgroundImage = "url('images/rain.jpg')";
-  }else if(weatherType.textContent == 'Snow'){
-    document.body.style.backgroundImage = "url('images/snow.jpg')";
-  }else if(weatherType.textContent == 'Thunderstorm'){
-    document.body.style.backgroundImage = "url('images/thunderstorm.jpg')";
-  }
-}
-
-// Date Manage
-
-function dateManage(dateArg){
-  let days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-
-  let months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-
-  let year = dateArg.getFullYear();
-  let month= months[dateArg.getMonth()];
-  let date = dateArg.getDate();
-  let day  = days[dateArg.getDay()];
-
-  return `${date} ${month} (${day}), ${year}`;
-}
